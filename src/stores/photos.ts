@@ -33,17 +33,13 @@ export const usePhotoStore = defineStore('photos', () => {
                 else photos.value = [...photos.value, ...data]
             }
         } catch (e: unknown) {
-            if (axios.isAxiosError(e)) {
-                toast.error('Ошибка', {
-                    description: 'Не удалось получить список фотографий. Более подброно в консоли',
-                })
-                console.error(e)
-            } else {
-                toast.error('Ошибка', {
-                    description: 'Неизвестная ошибка. Более подброно в консоли',
-                })
-                console.error(e)
-            }
+            let message = ''
+            if (axios.isAxiosError(e)) message = 'Не удалось получить новый список фотографий, подробнее в консоли.'
+            else message = 'Ошибка во время выполнения, подробнее в консоли.'
+            toast.error('Ошибка', {
+                description: message,
+            })
+            console.error(e)
         } finally {
             isLoading.value = false
         }
