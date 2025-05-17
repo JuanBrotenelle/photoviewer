@@ -3,18 +3,21 @@ import { Input } from "@/components/input-field";
 import { Button } from "@/components/ui/button";
 import { DataTable, columns } from "@/components/photo-table";
 import { usePhotoStore, type Photo } from "@/stores/photos";
-import { computed, onMounted } from "vue";
+import { useRequestQueue } from "@/composables/throttleScroll";
 import { useInputStore } from "@/stores/albumId";
+import { computed, onMounted } from "vue";
 
 const $photos = usePhotoStore();
 const $input = useInputStore();
+
+// Исключить множественные запросы при скролле
+const { wrap } = useRequestQueue();
 
 const tableData = computed<Photo[]>(() => $photos.getPhotos());
 const data = computed<string>(() => $input.formatString());
 
 onMounted(async () => {
-  if (tableData.value.length === 0)
-    await $photos.fetchPhotos("", 0, 30, "fetch");
+  if (tableData.value.length === 0) await $photos.fetchPhotos("", 0, "fetch");
 });
 </script>
 
@@ -27,7 +30,7 @@ onMounted(async () => {
     <Button
       variant="default"
       class="cursor-pointer"
-      @click="$photos.fetchPhotos(data, 0, 30, 'fetch')"
+      @click="$photos.fetchPhotos(data, 0, 'fetch')"
       >Поиск</Button
     >
   </div>
@@ -36,7 +39,11 @@ onMounted(async () => {
     <DataTable
       :columns="columns"
       :data="tableData"
-      @reach-bottom="$photos.fetchPhotos(data, tableData.length, 30, 'append')"
+      :loading="$photos.isLoading"
+      @reach-bottom="
+        wrap<void>(() => $photos.fetchPhotos(data, tableData.length, 'append'))
+      "
+      @sorting-change="$photos.fetchPhotos(data, 0, 'fetch')"
     />
   </div>
 </template>

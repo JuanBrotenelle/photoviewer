@@ -1,11 +1,18 @@
 import type { Photo } from '@/stores/photos'
 import type { ColumnDef } from '@tanstack/vue-table'
+import { Button } from '@/components/ui/button'
+import { ArrowUpDown } from 'lucide-vue-next'
 import { h } from 'vue'
 
 export const columns: ColumnDef<Photo>[] = [
   {
     accessorKey: 'id',
-    header: () => h('div', { class: 'text-center' }, 'Id'),
+    header: ({ column }) =>
+    h(Button, {
+      variant: 'ghost',
+      class: 'text-center mx-auto',
+      onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+    }, () => ['Id', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })]),
     cell: ({ row }) => {
       return h('div', { class: 'text-center font-medium' }, row.getValue('id'))
     },

@@ -1,5 +1,9 @@
 <script setup lang="ts" generic="TData, TValue">
-import type { ColumnDef } from "@tanstack/vue-table";
+import {
+  type ColumnDef,
+  getSortedRowModel,
+  type SortingState,
+} from "@tanstack/vue-table";
 import {
   Table,
   TableBody,
@@ -8,18 +12,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import { FlexRender, getCoreRowModel, useVueTable } from "@tanstack/vue-table";
 import { ref } from "vue";
+import { valueUpdater } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  loading: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: "reachBottom"): void;
+  (e: "sortingChange"): void;
 }>();
+
+const sorting = ref<SortingState>([]);
 
 const table = useVueTable({
   get data() {
@@ -29,6 +38,16 @@ const table = useVueTable({
     return props.columns;
   },
   getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  onSortingChange: (updaterOrValue) => {
+    valueUpdater(updaterOrValue, sorting);
+    emit("sortingChange");
+  },
+  state: {
+    get sorting() {
+      return sorting.value;
+    },
+  },
 });
 
 const scrollRef = ref<HTMLElement | null>(null);
@@ -47,7 +66,7 @@ function onScroll() {
 <template>
   <div
     ref="scrollRef"
-    class="border rounded-md overflow-auto max-h-[600px]"
+    class="rounded-md overflow-auto max-h-[600px] border mx-auto"
     @scroll="onScroll"
   >
     <Table>
@@ -84,6 +103,13 @@ function onScroll() {
           <TableRow>
             <TableCell :colspan="columns.length" class="h-24 text-center">
               Ничего нет.
+            </TableCell>
+          </TableRow>
+        </template>
+        <template v-if="props.loading">
+          <TableRow>
+            <TableCell :colspan="columns.length" class="h-24 text-center">
+              <Spinner />
             </TableCell>
           </TableRow>
         </template>
